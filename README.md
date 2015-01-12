@@ -5,7 +5,7 @@ Getting Started
 
 Add the following dependency,
 
-	dependentLibraries += "com.github.kikuomax" %% "spray-jwt" % "0.0.1-SNAPSHOT"
+	libraryDependencies += "com.github.kikuomax" %% "spray-jwt" % "0.0.1-SNAPSHOT"
 
 Currently, only a library for Scala version 2.11.x is provided.
 
