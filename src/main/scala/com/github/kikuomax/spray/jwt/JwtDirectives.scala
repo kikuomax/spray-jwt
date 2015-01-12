@@ -31,14 +31,7 @@ import spray.routing.directives.{
 }
 
 /**
- * Provides useful directives for authentication and authorization by
- * the JSON Web Token (JWT).
- *
- * Only JSON Web Signature (JWS) is supported.
- *
- * Please refer to [[http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-30 OAuth Working Group Draft]] for details on JWT.
- *
- * The implementation is powered by [[http://connect2id.com/products/nimbus-jose-jwt Nimbus JOSE + JWT]].
+ * Provides utilities for signing and verification by the JSON Web Token (JWT).
  */
 trait JwtDirectives {
   import BasicDirectives.{ extract, provide }
@@ -48,6 +41,10 @@ trait JwtDirectives {
   /**
    * A `UserPassAuthenticator` which returns a JWS object if a given pair of
    * a user and a password is authenticated.
+   *
+   * Useful if combined with `BasicAuth` and an `authenticate` directive.
+   * An inner route of an `authenticate` directive will receive a JWS
+   * (`JSONObject`) built by `claimBuilder` and signed by `signer`.
    *
    * @param authenticator
    *     The `UserPassAuthenticator` which authenticates a given pair of a user
@@ -76,10 +73,26 @@ trait JwtDirectives {
    * Authorization: Bearer JWT
    * }}}
    *
-   * Takes arguments like the following,
+   * Thanks to [[JwtAuthorizationMagnet]], this directive takes arguments
+   * similar to the following,
    * {{{
-   * authorizeToken[T](privilege: JSONObject => Option[T])(implicit verifier: JWSObject => Option[JSONObject]): Directive1[T]
+   * authorizeToken[T](privilege: JSONObject => Option[T])
+   *   (implicit verifier: JWSObject => Option[JSONObject]): Directive1[T]
    * }}}
+   *
+   * And will
+   *  1. Obtain the value associated with "Authorization" header.
+   *  1. Extract a JWT from the "Authorization" header value.
+   *  1. Verify the JWT with `verifier`.
+   *  1. Apply `privilege` to the JWT.
+   *  1. Supply the result from `privilege` to the inner route.
+   *
+   * Will reject,
+   *  - if no "Authorization" header is specified,
+   *  - or if the "Authorization" header does not specify a JWT,
+   *  - or if `verifier` cannot verify the JWT,
+   *  - or if `privilege` rejects the JWT
+   *
    */
   def authorizeToken[T](magnet: JwtAuthorizationMagnet[T]): Directive1[T] = {
     val prefix = "Bearer "
@@ -107,6 +120,9 @@ trait JwtDirectives {
   }
 }
 
+/** The companion object of [[JwtDirectives]]. */
+object JwtDirectives extends JwtDirectives
+
 /**
  * Magnet which attracts parameters necessary for the `authorizeToken`
  * directive.
@@ -127,20 +143,6 @@ object JwtAuthorizationMagnet {
   implicit def fromPrivilege[T](privilege: JSONObject => Option[T])
     (implicit verifier: JWSObject => Option[JSONObject]): JwtAuthorizationMagnet[T] =
     JwtAuthorizationMagnet(privilege)
-}
-
-/** A helper for a JWS signer. */
-object JwtSigner {
-  /** Creates a signer with given algorithm and secret. */
-  def apply(algorithm: JWSAlgorithm, secret: String): JSONObject => JWSObject = {
-    val header = new JWSHeader(algorithm);
-    val signer = new MACSigner(secret.getBytes());
-    claim => {
-      val jwsObject = new JWSObject(header, new Payload(claim))
-      jwsObject.sign(signer)
-      jwsObject
-    }
-  }
 }
 
 /**
@@ -315,7 +317,7 @@ trait JwtClaimVerifier extends (JSONObject => Option[JSONObject]) { self =>
   /**
    * Chains a privilege after this claim verifier.
    *
-   * `after` is not applied if this claim verifier fails.
+   * `after` will not be applied if this claim verifier fails.
    *
    * @param after
    *     The privilege to be applied after this claim verifier.
@@ -333,7 +335,7 @@ trait JwtClaimVerifier extends (JSONObject => Option[JSONObject]) { self =>
 /** Companion object of [[JwtClaimVerifier]]. */
 object JwtClaimVerifier {
   /**
-   * Returns a claim verifier which verifies the expiration time.
+   * Returns a privileging function which verifies the expiration time.
    *
    * If a specified claim set does not have "exp" field, verification of it
    * fails; i.e., returns `None`.
