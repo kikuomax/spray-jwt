@@ -50,9 +50,9 @@ package com.github.kikuomax.spray
  * import signature._
  *
  * // an implicit claim set building function
- * implicit val claimBuilder: String => Option[JSONObject] =
- *   claimSubject[String](identity) ~>
- *   claimIssuer("spray-jwt") ~>
+ * implicit val claimBuilder: String => Option[JWTClaimsSet] =
+ *   claimSubject[String](identity) &&
+ *   claimIssuer("spray-jwt") &&
  *   claimExpiration(30.minutes)
  *
  * // a user authentication function
@@ -72,8 +72,8 @@ package com.github.kikuomax.spray
  *   } ~
  *   path("verify") {
  *     // a privileging function
- *     def privilegeUser(claim: JSONObject): Option[String] =
- *       Option(claim.get("sub")) flatMap {
+ *     def privilegeUser(claim: JWTClaimsSet): Option[String] =
+ *       Option(claim.getSubject()) flatMap {
  *         case user: String if user == "John" => Some(user)
  *         case _                              => None
  *       }

@@ -1,11 +1,17 @@
 package com.github.kikuomax.spray.jwt
 
-import com.nimbusds.jose._
-import net.minidev.json._
-import scala.concurrent._
-import scala.concurrent.duration._
-import spray.routing._
-import spray.routing.authentication._
+import com.nimbusds.jose.JWSAlgorithm
+import com.nimbusds.jwt.JWTClaimsSet
+import scala.concurrent.{
+  ExecutionContext,
+  Future
+}
+import scala.concurrent.duration.DurationInt
+import spray.routing.HttpService
+import spray.routing.authentication.{
+  BasicAuth,
+  UserPass
+}
 
 /** An example service. */
 trait ExampleService extends HttpService {
@@ -21,9 +27,9 @@ trait ExampleService extends HttpService {
   import signature._
 
   // an implicit claim set building function
-  implicit val claimBuilder: String => Option[JSONObject] =
-    claimSubject[String](identity) ~>
-    claimIssuer("spray-jwt") ~>
+  implicit val claimBuilder: String => Option[JWTClaimsSet] =
+    claimSubject[String](identity) &&
+    claimIssuer("spray-jwt") &&
     claimExpiration(30.minutes)
 
   // a user authentication function
@@ -43,8 +49,8 @@ trait ExampleService extends HttpService {
     } ~
     path("verify") {
       // a privileging function
-      def privilegeUser(claim: JSONObject): Option[String] =
-        Option(claim.get("sub")) flatMap {
+      def privilegeUser(claim: JWTClaimsSet): Option[String] =
+        Option(claim.getSubject()) flatMap {
           case user: String if user == "John" => Some(user)
           case _                              => None
         }

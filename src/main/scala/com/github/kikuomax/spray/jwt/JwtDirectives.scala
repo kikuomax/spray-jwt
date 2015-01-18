@@ -10,8 +10,12 @@ import com.nimbusds.jose.crypto.{
   MACSigner,
   MACVerifier
 }
+import com.nimbusds.jwt.JWTClaimsSet
 import java.text.ParseException
-import java.util.Calendar
+import java.util.{
+  Calendar,
+  Date
+}
 import net.minidev.json.JSONObject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
@@ -43,8 +47,8 @@ trait JwtDirectives {
    * a user and a password is authenticated.
    *
    * Useful if combined with `BasicAuth` and an `authenticate` directive.
-   * An inner route of an `authenticate` directive will receive a JWS
-   * (`JSONObject`) built by `claimBuilder` and signed by `signer`.
+   * An inner route of an `authenticate` directive will receive a JWS object
+   * (`JWSObject`) built by `claimBuilder` and signed by `signer`.
    *
    * @param authenticator
    *     The `UserPassAuthenticator` which authenticates a given pair of a user
@@ -57,12 +61,12 @@ trait JwtDirectives {
    *     The execution context to run a `Future` returned from `authenticator`.
    */
   def jwtAuthenticator[T](authenticator: UserPassAuthenticator[T])
-    (implicit claimBuilder: T => Option[JSONObject],
-              signer: JSONObject => JWSObject,
+    (implicit claimBuilder: T => Option[JWTClaimsSet],
+              signer: JWTClaimsSet => JWSObject,
               executionContext: ExecutionContext): UserPassAuthenticator[JWSObject] =
     authenticator(_) map {
-      case Some(data) => claimBuilder(data) map { signer(_) }
-      case None       => None
+      case Some(x) => claimBuilder(x) map { signer(_) }
+      case None    => None
     }
 
   /** 
@@ -73,25 +77,25 @@ trait JwtDirectives {
    * Authorization: Bearer JWT
    * }}}
    *
-   * Thanks to [[JwtAuthorizationMagnet]], this directive takes arguments
-   * similar to the following,
+   * Thanks to [[JwtAuthorizationMagnet]], this directive will end up
+   * the following form,
    * {{{
-   * authorizeToken[T](privilege: JSONObject => Option[T])
-   *   (implicit verifier: JWSObject => Option[JSONObject]): Directive1[T]
+   * authorizeToken[T](privilege: JWTClaimsSet => Option[T])
+   *   (implicit verifier: JWSObject => Option[JWTClaimsSet]): Directive1[T]
    * }}}
    *
    * And will
    *  1. Obtain the value associated with "Authorization" header.
    *  1. Extract a JWT from the "Authorization" header value.
-   *  1. Verify the JWT with `verifier`.
-   *  1. Apply `privilege` to the JWT.
+   *  1. Verify the JWT with `verifier` and extract a claim set.
+   *  1. Apply `privilege` to the claim set.
    *  1. Supply the result from `privilege` to the inner route.
    *
    * Will reject,
    *  - if no "Authorization" header is specified,
    *  - or if the "Authorization" header does not specify a JWT,
    *  - or if `verifier` cannot verify the JWT,
-   *  - or if `privilege` rejects the JWT
+   *  - or if `privilege` rejects the claims set.
    *
    */
   def authorizeToken[T](magnet: JwtAuthorizationMagnet[T]): Directive1[T] = {
@@ -127,8 +131,8 @@ object JwtDirectives extends JwtDirectives
  * Magnet which attracts parameters necessary for the `authorizeToken`
  * directive.
  */
-case class JwtAuthorizationMagnet[T](privilege: JSONObject => Option[T])
-  (implicit val verifier: JWSObject => Option[JSONObject])
+case class JwtAuthorizationMagnet[T](privilege: JWTClaimsSet => Option[T])
+  (implicit val verifier: JWSObject => Option[JWTClaimsSet])
 
 /** Companion object of [[JwtAuthorizationMagnet]]. */
 object JwtAuthorizationMagnet {
@@ -140,8 +144,8 @@ object JwtAuthorizationMagnet {
    *     Returns a context dependent object if a given claim set has
    *     a privilege otherwise `None`.
    */
-  implicit def fromPrivilege[T](privilege: JSONObject => Option[T])
-    (implicit verifier: JWSObject => Option[JSONObject]): JwtAuthorizationMagnet[T] =
+  implicit def fromPrivilege[T](privilege: JWTClaimsSet => Option[T])
+    (implicit verifier: JWSObject => Option[JWTClaimsSet]): JwtAuthorizationMagnet[T] =
     JwtAuthorizationMagnet(privilege)
 }
 
@@ -168,8 +172,8 @@ case class JwtSignature(algorithm: JWSAlgorithm, secret: String) {
    *
    * Signs a given claim set and returns a signed JWS object.
    */
-  implicit def jwtSigner(claim: JSONObject): JWSObject = {
-    val jwsObject = new JWSObject(header, new Payload(claim))
+  implicit def jwtSigner(claim: JWTClaimsSet): JWSObject = {
+    val jwsObject = new JWSObject(header, new Payload(claim.toJSONObject()))
     jwsObject.sign(signer)
     jwsObject
   }
@@ -179,9 +183,13 @@ case class JwtSignature(algorithm: JWSAlgorithm, secret: String) {
    *
    * Verifies a given JWS object and returns a contained claim set.
    */
-  implicit def jwtVerifier(token: JWSObject): Option[JSONObject] =
+  implicit def jwtVerifier(token: JWSObject): Option[JWTClaimsSet] =
     if (token.verify(verifier))
-      Option(token.getPayload().toJSONObject())
+      try
+        Option(JWTClaimsSet.parse(token.getPayload().toJSONObject()))
+      catch {
+        case _: ParseException => None
+      }
     else
       None
 }
@@ -189,9 +197,9 @@ case class JwtSignature(algorithm: JWSAlgorithm, secret: String) {
 /**
  * A claim builder.
  *
- * You can chain multiple claim builders by `~` operator.
+ * You can chain multiple claim builders by `&&` operator.
  */
-trait JwtClaimBuilder[T] extends (T => Option[JSONObject]) { self =>
+trait JwtClaimBuilder[T] extends (T => Option[JWTClaimsSet]) { self =>
   /**
    * Builds a claim.
    *
@@ -201,10 +209,10 @@ trait JwtClaimBuilder[T] extends (T => Option[JSONObject]) { self =>
    * @return
    *     The claim build from `input`.
    */
-  def apply(input: T): Option[JSONObject];
+  def apply(input: T): Option[JWTClaimsSet];
 
   /**
-   * Chains a specified claim builder after this claim builder.
+   * Chains a specified claim builder function after this claim builder.
    *
    * Claims appended by `after` have precedence over the claims built by this
    * claim builder.
@@ -215,7 +223,7 @@ trait JwtClaimBuilder[T] extends (T => Option[JSONObject]) { self =>
    *     A new claim builder which builds a claim set by this claim builder and
    *     `after`.
    */
-  def ~>(after: T => Option[JSONObject]): T => Option[JSONObject] =
+  def &&(after: T => Option[JWTClaimsSet]): T => Option[JWTClaimsSet] =
     input => mergeClaims(self(input), after(input))
 
   /**
@@ -231,15 +239,15 @@ trait JwtClaimBuilder[T] extends (T => Option[JSONObject]) { self =>
    *     A new claim set which has claims in both `first` and `second`.
    *     `None` if `first` or `second` is `None`.
    */
-  protected def mergeClaims(first:  Option[JSONObject],
-                            second: Option[JSONObject]): Option[JSONObject] = 
+  protected def mergeClaims(first:  Option[JWTClaimsSet],
+                            second: Option[JWTClaimsSet]): Option[JWTClaimsSet] = 
     for {
       claims1 <- first
       claims2 <- second
     } yield {
-      val newClaims = new JSONObject(claims1)
-      newClaims.merge(claims2)
-      newClaims
+      val newClaims = new JSONObject(claims1.toJSONObject())
+      newClaims.merge(claims2.toJSONObject())
+      JWTClaimsSet.parse(newClaims)
     }
 }
 
@@ -252,13 +260,12 @@ object JwtClaimBuilder {
    *     The valid duration of a JWT.
    *     The minimum resolution is one minute.
    */
-  def claimExpiration[T](duration: Duration): T => Option[JSONObject] =
+  def claimExpiration[T](duration: Duration): T => Option[JWTClaimsSet] =
     input => {
       val validUntil = Calendar.getInstance()
       validUntil.add(Calendar.MINUTE, duration.toMinutes.toInt)
-      val claims = new JSONObject()
-      val seconds: Long = validUntil.getTimeInMillis() / 1000
-      claims.put("exp", new java.lang.Long(seconds))
+      val claims = new JWTClaimsSet()
+      claims.setExpirationTime(validUntil.getTime())
       Some(claims)
     }
 
@@ -268,10 +275,10 @@ object JwtClaimBuilder {
    * @param issuer
    *     The issuer of a JWT.
    */
-  def claimIssuer[T](issuer: String): T => Option[JSONObject] =
+  def claimIssuer[T](issuer: String): T => Option[JWTClaimsSet] =
     input => {
-      val claims = new JSONObject()
-      claims.put("iss", issuer)
+      val claims = new JWTClaimsSet()
+      claims.setIssuer(issuer)
       Some(claims)
     }
 
@@ -281,17 +288,17 @@ object JwtClaimBuilder {
    * @param subject
    *     A function which extracts the subject from an input.
    */
-  def claimSubject[T](subject: T => String): T => Option[JSONObject] =
+  def claimSubject[T](subject: T => String): T => Option[JWTClaimsSet] =
     input => {
-      val claims = new JSONObject()
-      claims.put("sub", subject(input))
+      val claims = new JWTClaimsSet()
+      claims.setSubject(subject(input))
       Some(claims)
     }
 
   /**
    * Implicitly converts a claim builder function into a [[JwtClaimBuilder]].
    */
-  implicit def toJwtClaimBuilder[T](f: T => Option[JSONObject]): JwtClaimBuilder[T] =
+  implicit def toJwtClaimBuilder[T](f: T => Option[JWTClaimsSet]): JwtClaimBuilder[T] =
     new JwtClaimBuilder[T] {
       override def apply(input: T) = f(input)
     }
@@ -303,7 +310,7 @@ object JwtClaimBuilder {
  * Instance of this trait can be passed as a `privilege` argument of the
  * `authorizeToken` directive.
  */
-trait JwtClaimVerifier extends (JSONObject => Option[JSONObject]) { self =>
+trait JwtClaimVerifier extends (JWTClaimsSet => Option[JWTClaimsSet]) { self =>
   /**
    * Verifies a specified claim set.
    *
@@ -312,19 +319,19 @@ trait JwtClaimVerifier extends (JSONObject => Option[JSONObject]) { self =>
    * @return
    *     The verified claim set. `None` if `claim` is not verified.
    */
-  def apply(claims: JSONObject): Option[JSONObject]
+  def apply(claims: JWTClaimsSet): Option[JWTClaimsSet]
 
   /**
-   * Chains a privilege after this claim verifier.
+   * Chains a specified privilege function after this claim verifier.
    *
    * `after` will not be applied if this claim verifier fails.
    *
    * @param after
-   *     The privilege to be applied after this claim verifier.
+   *     The privilege function to be applied after this claim verifier.
    * @return
    *     A new privilege which applies this claim verifier and then `after`.
    */
-  def &&[T](after: JSONObject => Option[T]): JSONObject => Option[T] =
+  def &&[T](after: JWTClaimsSet => Option[T]): JWTClaimsSet => Option[T] =
     claims =>
       for {
         first  <- self(claims)
@@ -340,21 +347,19 @@ object JwtClaimVerifier {
    * If a specified claim set does not have "exp" field, verification of it
    * fails; i.e., returns `None`.
    */
-  def verifyNotExpired: JSONObject => Option[JSONObject] =
+  def verifyNotExpired: JWTClaimsSet => Option[JWTClaimsSet] =
     claims => {
-      def isValid(validUntil: Long) =
-        Calendar.getInstance().getTimeInMillis() / 1000 <= validUntil
-      claims.get("exp") match {
-        case validUntil: Number if isValid(validUntil.longValue()) =>
-          Some(claims)
-        case _ =>
-          None
+      def isValid(validUntil: Date) =
+        Calendar.getInstance().getTime().compareTo(validUntil) <= 0
+      Option(claims.getExpirationTime()) match {
+        case Some(validUntil) if isValid(validUntil) => Some(claims)
+        case _                                       => None
       }
     }
 
   /** Implicitly converts a claim verifier into a [[JwtClaimVerifier]]. */
-  implicit def toJwtClaimVerifier(f: JSONObject => Option[JSONObject]) =
+  implicit def toJwtClaimVerifier(f: JWTClaimsSet => Option[JWTClaimsSet]) =
     new JwtClaimVerifier {
-      override def apply(claims: JSONObject): Option[JSONObject] = f(claims)
+      override def apply(claims: JWTClaimsSet): Option[JWTClaimsSet] = f(claims)
     }
 }
