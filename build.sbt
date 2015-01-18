@@ -14,9 +14,15 @@ libraryDependencies ++= Seq(
   "com.nimbusds"      %  "nimbus-jose-jwt" % "3.5"
 )
 
-useGpg := true
-
 publishMavenStyle := true
+
+publishTo := {
+  val prefix = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at prefix + "content/repositories/snapshots")
+  else
+    Some("releases" at prefix +"service/local/staging/deploy/maven2")
+}
 
 publishArtifact in Test := false
 
