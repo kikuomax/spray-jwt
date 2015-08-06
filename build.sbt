@@ -1,17 +1,17 @@
 organization := "com.github.kikuomax"
 
-name         := "spray-jwt"
+name         := "spray-jwt-shapeless2"
 
-version      := "0.0.1"
+version      := "0.0.1-SNAPSHOT"
 
 crossScalaVersions := Seq("2.10.4", "2.11.4")
 
 scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
 
 libraryDependencies ++= Seq(
-  "io.spray"          %% "spray-routing"   % "1.3.2",
-  "com.typesafe.akka" %% "akka-actor"      % "2.3.8",
-  "com.nimbusds"      %  "nimbus-jose-jwt" % "3.5"
+  "io.spray"          %% "spray-routing-shapeless2" % "1.3.2",
+  "com.typesafe.akka" %% "akka-actor"               % "2.3.8",
+  "com.nimbusds"      %  "nimbus-jose-jwt"          % "3.5"
 )
 
 publishMavenStyle := true
