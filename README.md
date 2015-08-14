@@ -3,11 +3,19 @@
 Getting Started
 ===============
 
-Add the following dependency,
+Add the following dependency to your `build.sbt`,
 
-	libraryDependencies += "com.github.kikuomax" %% "spray-jwt" % "0.0.1"
+```
+libraryDependencies += "com.github.kikuomax" %% "spray-jwt" % "0.0.1"
+```
 
 Binaries for Scala 2.10.x and 2.11.x are provided.
+
+If you are using [shapeless 2](https://github.com/milessabin/shapeless); i.e., `spray-routing-shapeless2`, please try the following,
+
+```
+libraryDependencies += "com.github.kikuomax" %% "spray-jwt-shapeless2" % "0.0.1"
+```
 
 Example
 =======
