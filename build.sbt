@@ -2,7 +2,7 @@ organization := "com.github.kikuomax"
 
 name         := "spray-jwt"
 
-version      := "0.0.1"
+version      := "0.0.2-SNAPSHOT"
 
 crossScalaVersions := Seq("2.10.4", "2.11.4")
 
