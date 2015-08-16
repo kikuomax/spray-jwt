@@ -1,0 +1,22 @@
+organization := "com.github.kikuomax"
+
+name := "spray-jwt-example"
+
+version := "0.1.0"
+
+scalaVersion := "2.11.4"
+
+scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
+
+libraryDependencies ++= {
+  val sprayV = "1.3.2"
+  val akkaV = "2.3.8"
+  Seq(
+    "io.spray"            %% "spray-can"     % sprayV,
+    "io.spray"            %% "spray-routing" % sprayV,
+    "com.typesafe.akka"   %% "akka-actor"    % "2.3.8",
+    "com.github.kikuomax" %% "spray-jwt"     % "0.0.2-SNAPSHOT"
+  )
+}
+
+Revolver.settings

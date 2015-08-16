@@ -4,7 +4,7 @@ name         := "spray-jwt"
 
 version      := "0.0.2-SNAPSHOT"
 
-crossScalaVersions := Seq("2.10.4", "2.11.4")
+crossScalaVersions := Seq("2.11.4", "2.10.4")
 
 scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
 
