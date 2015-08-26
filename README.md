@@ -6,7 +6,7 @@ Getting Started
 Add the following dependency to your `build.sbt`,
 
 ```
-libraryDependencies += "com.github.kikuomax" %% "spray-jwt" % "0.0.1"
+libraryDependencies += "com.github.kikuomax" %% "spray-jwt" % "0.0.2"
 ```
 
 Binaries for Scala 2.10.x and 2.11.x are provided.
@@ -14,13 +14,13 @@ Binaries for Scala 2.10.x and 2.11.x are provided.
 If you are using [shapeless 2](https://github.com/milessabin/shapeless); i.e., `spray-routing-shapeless2`, please try the following,
 
 ```
-libraryDependencies += "com.github.kikuomax" %% "spray-jwt-shapeless2" % "0.0.1"
+libraryDependencies += "com.github.kikuomax" %% "spray-jwt-shapeless2" % "0.0.2"
 ```
 
 Example
 =======
 
-The following example is derived from the example code in the documentation for the `authenticate` directive.
+The following example is derived from the example code in the documentation for the `authenticate` directive of [spray.io](http://spray.io).
 
 ```scala
 import com.github.kikuomax.spray.jwt.JwtDirectives._
@@ -92,6 +92,15 @@ JWT Library
 ===========
 
 [Nimbus JOSE + JWT](http://connect2id.com/products/nimbus-jose-jwt) is used for generating and verifying JWTs.
+
+Release Notes
+=============
+
+0.0.2
+-----
+
+ - `JwtDirectives.authenticateToken` can take a directive that extracts a token from an HTTP request.
+ - An example application is introduced.
 
 License
 =======

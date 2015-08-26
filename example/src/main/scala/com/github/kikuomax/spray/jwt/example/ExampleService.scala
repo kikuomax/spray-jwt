@@ -106,7 +106,6 @@ s"""[
         path("login") {
           // autenticates a user and a password
           parameter("cookie" ? false) { usesCookie =>
-            println("Cookie? " + usesCookie)
             authenticate(BasicAuth(
               jwtAuthenticator(myUserPassAuthenticator _), "secure site"))
             { jws =>
