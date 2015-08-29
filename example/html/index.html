@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>spray-jwt example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script type="text/javascript">
+    $(function () {
+        var serverUrl = 'http://localhost:9090';
+
+        function ViewModel() {
+            var self = this;
+
+            // user name
+            self.user = ko.observable('');
+            // password
+            self.password = ko.observable('');
+            // whether uses a cookie for authentication
+            self.usesCookie = ko.observable(false);
+            // authenticated token
+            self.token = ko.observable('');
+            // message to be posted
+            self.message = ko.observable('');
+            // messages returned from the server
+            self.messageList = ko.observableArray();
+            // error message
+            self.errorMessage = ko.observable('');
+
+            // does basic authentication
+            self.login = function () {
+                var url = serverUrl + '/login';
+                if (self.usesCookie()) {
+                    url += '?cookie=true';
+                }
+                var userPassword = self.user() + ':' + self.password();
+                $.ajax(url, {
+                    headers: {
+                        Authorization: 'Basic ' + window.btoa(userPassword)
+                    },
+                    xhrFields: {
+                        withCredentials: true
+                    }
+                }).done(function (response) {
+                    self.errorMessage('');
+                    if (!self.usesCookie()) {
+                        // the response should be the token
+                        window.sessionStorage.accessToken = response;
+                    }
+                    self.token(response);
+                    self.getMessages();
+                }).fail(showAjaxError);
+            };
+
+            // gets the messages
+            self.getMessages = function () {
+                var url = getMessagesUrl();
+                var settings = setAuthorizationParameters({});
+                $.ajax(url, settings).done(function (messages) {
+                    self.errorMessage('');
+                    updateMessages(messages);
+                }).fail(showAjaxError);
+            };
+
+            // posts the message
+            self.postMessage = function () {
+                var url = getMessagesUrl();
+                var settings = setAuthorizationParameters({
+                    method: 'POST',
+                    data: self.message()
+                });
+                $.ajax(url, settings).done(function (messages) {
+                    self.errorMessage('');
+                    updateMessages(messages);
+                }).fail(showAjaxError);
+            };
+
+            // gets the URL of the messages
+            function getMessagesUrl() {
+                var url = serverUrl + '/messages';
+                if (self.usesCookie()) {
+                    url += '?cookie=true';
+                }
+                return url;
+            }
+
+            // sets authorization parameters to given Ajax settings
+            function setAuthorizationParameters(settings) {
+                if (self.usesCookie()) {
+                    // allows sending a cookie
+                    $.extend(true, settings, {
+                        xhrFields: {
+                            withCredentials: true
+                        }
+                    });
+                } else {
+                    // sets the Authorization header
+                    var token = window.sessionStorage.accessToken;
+                    $.extend(true, settings, {
+                        headers: {
+                            Authorization: 'Bearer ' + token
+                        }
+                    });
+                }
+                return settings;
+            }
+
+            // updates the messages with given ones
+            function updateMessages(messages) {
+                self.messageList.removeAll();
+                messages.forEach(function (entry) {
+                    self.messageList.push(entry);
+                });
+            }
+
+            // shows the error information when an Ajax request fails
+            function showAjaxError(_, _, errorThrown) {
+                self.errorMessage(errorThrown);
+            }
+        }
+
+        ko.applyBindings(new ViewModel());
+    });
+</script>
+</head>
+<body>
+  <div class="container">
+    <form data-bind="submit: login">
+      <label for="user">User</label>
+      <input type="text" name="user" data-bind="value: user">
+      <label for="password">Password</label>
+      <input type="password" name="password" data-bind="value: password">
+      <input type="checkbox" name="cookie" data-bind="checked: usesCookie">
+      Use Cookie
+      <button type="submit">Login</button>
+    </form>
+  </div>
+  <div class="container">
+    <form data-bind="submit: postMessage">
+      <label for="message">Message</label>
+      <input type="text" name="message" data-bind="value: message">
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+  <div class="container">
+    <p style="color: #FF0000" data-bind="text: errorMessage"></p>
+  </div>
+  <div class="container">
+    <table class="table table-bordered">
+      <thead>
+        <th>User</th>
+        <th>Message</th>
+      </thead>
+      <tbody data-bind="foreach: messageList">
+        <tr>
+          <td data-bind="text: user"></td>
+          <td data-bind="text: message"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="container">
+    <p><label>Token: </label><span data-bind="text: token"></span></p>
+  </div>
+</body>
+</html>
