@@ -18,7 +18,7 @@ libraryDependencies ++= {
     "io.spray"            %% "spray-can"     % sprayV,
     "io.spray"            %% "spray-routing" % sprayV,
     "com.typesafe.akka"   %% "akka-actor"    % "2.3.8",
-    "com.github.kikuomax" %% "spray-jwt"     % "0.0.3-SNAPSHOT"
+    "com.github.kikuomax" %% "spray-jwt"     % "0.0.3"
   )
 }
 
