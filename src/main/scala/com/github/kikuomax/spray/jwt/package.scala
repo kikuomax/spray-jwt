@@ -1,24 +1,24 @@
 package com.github.kikuomax.spray
 
 /**
- * Provides utilities for signing and verification by the JSON Web Token (JWT).
+ * Provides utilities for signing and verifying the JSON Web Token (JWT).
  *
  * Only JSON Web Signature (JWS) is supported.
  *
- * Please refer to [[http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-30 OAuth Working Group Draft]] for details on JWT.
+ * Please refer to [[http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-30 OAuth Working Group Draft]] for details about JWT.
  *
  * The implementation is powered by [[http://connect2id.com/products/nimbus-jose-jwt Nimbus JOSE + JWT]].
  *
  * ===Signing===
  *
- * Signing is supposed to be done when a Basic authentication has succeeded.
- * There is a function [[JwtDirectives.jwtAuthenticator]] which returns
- * a `UserPassAuthenticator` that authenticates a given pair of a user and
- * a password, builds a claim set and signs it.
- * Both claim set buildind and signing functions are implicitly given to
+ * Signing is designed to be done when a Basic authentication succeeds.
+ * The function [[JwtDirectives.jwtAuthenticator]] returns
+ * a `UserPassAuthenticator` which authenticates a given pair of user and
+ * password, builds a claims set and signs it.
+ * Both claims set buildind and signing functions are implicitly given to
  * [[JwtDirectives.jwtAuthenticator]].
  *
- * [[JwtClaimBuilder]] helps defining a claim set building function.
+ * [[JwtClaimBuilder]] helps defining a claims set building function.
  *
  * [[JwtSignature]] helps defining a signing function.
  *
@@ -35,7 +35,7 @@ package com.github.kikuomax.spray
  *
  * ===Example===
  *
- * The following is an example derived from [[http://spray.io/documentation/1.2.2/spray-routing/security-directives/authenticate/#authenticate an example of the authenticate directive]].
+ * The following is an example derived from [[http://spray.io/documentation/1.2.2/spray-routing/security-directives/authenticate/#authenticate the example of the authenticate directive]].
  *
  * {{{
  * import JwtDirectives._

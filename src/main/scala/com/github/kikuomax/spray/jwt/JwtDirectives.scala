@@ -280,14 +280,16 @@ object JwtClaimBuilder {
   /**
    * Returns a claim builder which sets the "exp" field to an expiration time.
    *
+   * If `duration` is less than one second, it will be treated as 0.
+   *
    * @param duration
    *     Valid duration of a JWT.
-   *     Minimum resolution is one minute.
+   *     Minimum resolution is one second.
    */
   def claimExpiration[T](duration: Duration): T => Option[JWTClaimsSet] =
     input => {
       val validUntil = Calendar.getInstance()
-      validUntil.add(Calendar.MINUTE, duration.toMinutes.toInt)
+      validUntil.add(Calendar.SECOND, duration.toSeconds.toInt)
       val claims = new JWTClaimsSet()
       claims.setExpirationTime(validUntil.getTime())
       Some(claims)
