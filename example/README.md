@@ -61,3 +61,11 @@ The example consists of an API and client interface services.
 	The client interface service will be listening at `http://localhost:8080`.
 
  3. Open `http://localhost:8080` on your browser.
+
+The following pairs of username and password can be used,
+
+Username | Password | Privilege
+-------- | -------- | ---------
+John     | p4ssw0rd | RW
+Alice    | key      | RW
+Bob      | chiave   | R
