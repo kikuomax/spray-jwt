@@ -2,7 +2,7 @@ organization := "com.github.kikuomax"
 
 name         := "spray-jwt"
 
-version      := "0.0.3"
+version      := "0.0.4"
 
 crossScalaVersions := Seq("2.11.4", "2.10.4")
 
@@ -14,7 +14,7 @@ libraryDependencies ++= {
     "io.spray"          %% "spray-routing"   % sprayV,
     "io.spray"          %% "spray-testkit"   % sprayV % "test",
     "com.typesafe.akka" %% "akka-actor"      % "2.3.8",
-    "com.nimbusds"      %  "nimbus-jose-jwt" % "3.5",
+    "com.nimbusds"      %  "nimbus-jose-jwt" % "8.4",
     "org.specs2"        %% "specs2-core"     % "2.3.13" % "test"
   )
 }
