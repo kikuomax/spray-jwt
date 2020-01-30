@@ -1,12 +1,19 @@
 *spray-jwt* is a set of utilities for [spray.io](http://spray.io), which perform signing and verification of a JSON Web Token (JWT).
 
+**This project is no longer actively maintained.**
+
+Please consider migrating to [Akka HTTP](https://doc.akka.io/docs/akka-http/current/introduction.html).
+I found some JWT libraries for Akka HTTP.
+- https://github.com/witi83/akka-jwt (a fork of this project)
+- https://github.com/softwaremill/akka-http-session
+
 Getting Started
 ===============
 
 Add the following dependency to your `build.sbt`,
 
 ```
-libraryDependencies += "com.github.kikuomax" %% "spray-jwt" % "0.0.3"
+libraryDependencies += "com.github.kikuomax" %% "spray-jwt" % "0.0.4"
 ```
 
 Binaries for Scala 2.10.x and 2.11.x are provided.
@@ -14,7 +21,7 @@ Binaries for Scala 2.10.x and 2.11.x are provided.
 If you are using [shapeless 2](https://github.com/milessabin/shapeless); i.e., `spray-routing-shapeless2`, please try the following,
 
 ```
-libraryDependencies += "com.github.kikuomax" %% "spray-jwt-shapeless2" % "0.0.3"
+libraryDependencies += "com.github.kikuomax" %% "spray-jwt-shapeless2" % "0.0.4"
 ```
 
 Example
@@ -96,16 +103,22 @@ JWT Library
 Release Notes
 =============
 
+0.0.4
+-----
+
+- The minimum length of a secret is **256 bits**; i.e., 32 bytes.
+  This is due to updating Nimbus JOSE + JWT `v3.5` &rightarrow; `v8.4` to address a [security vulnerability](https://github.com/kikuomax/spray-jwt/pull/5).
+
 0.0.3
 -----
 
- - The minimum resolution of `JwtClaimBuilder.claimExpiration` is one second.
+- The minimum resolution of `JwtClaimBuilder.claimExpiration` is one second.
 
 0.0.2
 -----
 
- - `JwtDirectives.authenticateToken` can take a directive that extracts a token from an HTTP request.
- - An example application is introduced.
+- `JwtDirectives.authenticateToken` can take a directive that extracts a token from an HTTP request.
+- An example application is introduced.
 
 License
 =======
