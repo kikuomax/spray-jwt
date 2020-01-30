@@ -1,7 +1,10 @@
 {
   "name": "spray-jwt-example",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "scripts": {
+    "start": "node service.js"
+  },
   "devDependencies": {
-    "express": "^4.13.3"
+    "express": "^4.17.1"
   }
 }

@@ -54,7 +54,7 @@ trait ExampleService extends HttpService with JwtDirectives {
   implicit val executionContext: ExecutionContext
 
   // imports implicit signing and verification functions in the scope
-  val signature = JwtSignature(JWSAlgorithm.HS256, "chiave segreta")
+  val signature = JwtSignature(JWSAlgorithm.HS256, "chiave segreta / clave segura / secret key")
   import signature._
 
   // an implicit claim set building function
