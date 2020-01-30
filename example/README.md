@@ -55,7 +55,7 @@ The example consists of an API and client interface services.
  2. Runs a client interface service on *Node.js*.
 
 	```shell
-	node service.js
+	npm start
 	```
 
 	The client interface service will be listening at `http://localhost:8080`.

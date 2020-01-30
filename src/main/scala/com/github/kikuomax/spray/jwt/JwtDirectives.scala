@@ -16,7 +16,9 @@ import java.util.{
   Calendar,
   Date
 }
+
 import net.minidev.json.JSONObject
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
@@ -35,6 +37,8 @@ import spray.routing.directives.BasicDirectives.{
 import spray.routing.directives.CookieDirectives.optionalCookie
 import spray.routing.directives.HeaderDirectives.optionalHeaderValueByName
 import spray.routing.directives.RouteDirectives.reject
+
+import scala.util.Try
 
 /**
  * Provides utilities for building, signing and verification of a JSON Web
@@ -71,7 +75,7 @@ trait JwtDirectives {
           case None => None
         }
 
-  /** 
+  /**
    * Verifies a token sent with an HTTP request.
    *
    * Thanks to [[JwtAuthorizationMagnet]], this directive works like the
@@ -290,9 +294,10 @@ object JwtClaimBuilder {
     input => {
       val validUntil = Calendar.getInstance()
       validUntil.add(Calendar.SECOND, duration.toSeconds.toInt)
-      val claims = new JWTClaimsSet()
-      claims.setExpirationTime(validUntil.getTime())
-      Some(claims)
+      Try(new JWTClaimsSet.Builder()
+        .expirationTime(validUntil.getTime())
+        .build
+      ).toOption
     }
 
   /**
@@ -303,9 +308,10 @@ object JwtClaimBuilder {
    */
   def claimIssuer[T](issuer: String): T => Option[JWTClaimsSet] =
     input => {
-      val claims = new JWTClaimsSet()
-      claims.setIssuer(issuer)
-      Some(claims)
+      Try(new JWTClaimsSet.Builder()
+        .issuer(issuer)
+        .build
+      ).toOption
     }
 
   /**
@@ -316,9 +322,10 @@ object JwtClaimBuilder {
    */
   def claimSubject[T](subject: T => String): T => Option[JWTClaimsSet] =
     input => {
-      val claims = new JWTClaimsSet()
-      claims.setSubject(subject(input))
-      Some(claims)
+      Try(new JWTClaimsSet.Builder()
+        .subject(subject(input))
+        .build
+      ).toOption
     }
 
   /**

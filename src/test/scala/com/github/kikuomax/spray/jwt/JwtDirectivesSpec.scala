@@ -31,7 +31,7 @@ class JwtDirectivesSpec
   implicit val executionContext = system.dispatcher
 
   // creates signer and verifier
-  val signature = JwtSignature(JWSAlgorithm.HS256, "testkey")
+  val signature = JwtSignature(JWSAlgorithm.HS256, "thisHasGotToBeAtleast32BitsLong.")
 
   // claims set builder that builds a claims set valid for one second
   val oneSecondBuilder: String => Option[JWTClaimsSet] =
